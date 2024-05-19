@@ -24,6 +24,7 @@ public class Jaccard implements SimilarityMeasure {
      * @param string2 The second string argument for the similarity calculation.
      * @return The multiset Jaccard similarity of the two arguments.
      */
+
     @Override
     public double calculate(String string1, String string2) {
         string1 = (string1 == null) ? "" : string1;
@@ -46,18 +47,50 @@ public class Jaccard implements SimilarityMeasure {
     public double calculate(String[] strings1, String[] strings2) {
         double jaccardSimilarity = 0;
 
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //                                      DATA INTEGRATION ASSIGNMENT                                           //
-        // Calculate the Jaccard similarity of the two String arrays. Note that the Jaccard similarity needs to be    //
-        // calculated differently depending on the token semantics: set semantics remove duplicates while bag         //
-        // semantics consider them during the calculation. The solution should be able to calculate the Jaccard       //
-        // similarity either of the two semantics by respecting the inner bagSemantics flag.                          //
+        // Convert arrays to sets if set semantics is required
+        Set<String> set1, set2;
+        if (!bagSemantics) {
+            set1 = new HashSet<>(Arrays.asList(strings1));
+            set2 = new HashSet<>(Arrays.asList(strings2));
+        } else {
+            // For bag semantics, create a frequency map of tokens
+            Map<String, Integer> frequencyMap1 = createFrequencyMap(strings1);
+            Map<String, Integer> frequencyMap2 = createFrequencyMap(strings2);
 
+            // Convert frequency maps to sets for easier intersection and union calculations
+            set1 = frequencyMap1.keySet();
+            set2 = frequencyMap2.keySet();
+        }
 
+        // Calculate intersection size
+        Set<String> intersection = new HashSet<>(set1);
+        intersection.retainAll(set2);
+        int intersectionSize = intersection.size();
 
-        //                                                                                                            //
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Calculate union size
+        int unionSize;
+        if (bagSemantics) {
+            // For bag semantics, union includes all elements
+            unionSize = Math.max(set1.size(), set2.size());
+        } else {
+            // For set semantics, union is distinct elements
+            Set<String> union = new HashSet<>(set1);
+            union.addAll(set2);
+            unionSize = union.size();
+        }
 
+        // Calculate Jaccard similarity
+        if (unionSize != 0) {
+            jaccardSimilarity = (double) intersectionSize / unionSize;
+        }
         return jaccardSimilarity;
+    }
+
+    private Map<String, Integer> createFrequencyMap(String[] strings) {
+        Map<String, Integer> frequencyMap = new HashMap<>();
+        for (String str : strings) {
+            frequencyMap.put(str, frequencyMap.getOrDefault(str, 0) + 1);
+        }
+        return frequencyMap;
     }
 }
